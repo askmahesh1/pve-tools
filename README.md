@@ -23,8 +23,24 @@ A robust, zero-dependency Python 3 script to automate running update commands (o
 Ensure the script is executable:
 
 ```bash
-chmod +x update_containers.py
+chmod +x pveup
 ```
+
+---
+
+## Shell Integration
+
+To run `pveup` from any directory without needing an alias, add the tool's directory to your shell's `PATH` configuration (e.g., in `~/.zshrc` or `~/.bashrc`):
+
+```bash
+# Add pve-tools to PATH
+export PATH="/path/to/pve-tools:$PATH"
+```
+
+Once loaded (run `source ~/.zshrc`), you can use these commands from anywhere:
+- **`pveup lxc`** (or just **`pveup`**): Run with the default container update command.
+- **`pveup apt`**: Run package manager updates (`apt-get update && apt-get upgrade -y`) on all running containers.
+- **`pveup lxc --dry-run` / `pveup apt -c 101`**: Forward any additional options (like dry-run, container selectors) directly to the script.
 
 ---
 
@@ -33,42 +49,46 @@ chmod +x update_containers.py
 ### 1. Run a Dry Run (Recommended first step)
 Verify the connection to your Proxmox host and see which containers will be targeted:
 ```bash
-./update_containers.py --dry-run
+pveup --dry-run
 ```
 
 ### 2. Run Default "update" Command on All Containers
 Executes the literal command `update` inside all running LXC containers in the cluster:
 ```bash
-./update_containers.py
+pveup
 ```
 
 ### 3. Run Package Manager Updates
 To run standard package updates (e.g., APT updates and upgrades on Debian/Ubuntu):
 ```bash
-./update_containers.py --cmd "apt-get update && apt-get upgrade -y"
+pveup apt
+```
+Or run with a custom command:
+```bash
+pveup --cmd "apt-get update && apt-get upgrade -y"
 ```
 
 ### 4. Update Specific Containers
 Update only VMID `100` and `101`:
 ```bash
-./update_containers.py -c 100,101
+pveup -c 100,101
 ```
 
 Exclude container named `pihole`:
 ```bash
-./update_containers.py -e pihole
+pveup -e pihole
 ```
 
 ### 5. Running directly on Proxmox VE Host (Local Mode)
 If you copy the script onto your Proxmox host directly, run it with the local flag:
 ```bash
-./update_containers.py --local
+pveup --local
 ```
 
 ### 6. Using a Non-Root SSH User with Sudo
 If your default SSH configuration logs in as a non-root user, use `--sudo` to authenticate:
 ```bash
-./update_containers.py --host myuser@pve.home.local --sudo
+pveup --host myuser@pve.home.local --sudo
 ```
 
 ---
@@ -76,17 +96,23 @@ If your default SSH configuration logs in as a non-root user, use `--sudo` to au
 ## CLI Options
 
 ```text
-usage: update_containers.py [-h] [--host HOST] [--cmd CMD]
-                            [--containers CONTAINERS] [--exclude EXCLUDE]
-                            [--node NODE] [--dry-run] [--local] [--sudo]
+usage: pveup [-h] [--host HOST] [--cmd CMD] [--containers CONTAINERS]
+             [--exclude EXCLUDE] [--node NODE] [--dry-run] [--local] [--sudo]
+             [action]
 
 Automate command execution (like 'update') across Proxmox LXC containers.
+
+positional arguments:
+  action                Type of update to perform: 'lxc' (default container
+                        update command) or 'apt' (apt-get update && upgrade).
 
 optional arguments:
   -h, --help            show this help message and exit
   --host HOST, -H HOST  Proxmox host to SSH into (default: root@pve.home.local). 
                         Pass 'local' to run locally on the PVE host.
-  --cmd CMD, -C CMD     Command to run inside each container (default: 'update').
+  --cmd CMD, -C CMD     Command to run inside each container (defaults to
+                        'update' for 'lxc' and 'apt-get update && apt-get
+                        upgrade -y' for 'apt').
   --containers CONTAINERS, -c CONTAINERS
                         Comma-separated list of container VMIDs or names to update (whitelist).
   --exclude EXCLUDE, -e EXCLUDE

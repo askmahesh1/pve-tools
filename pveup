@@ -95,14 +95,21 @@ def main():
         description="Automate command execution (like 'update') across Proxmox LXC containers."
     )
     parser.add_argument(
+        "action",
+        choices=["lxc", "apt"],
+        nargs="?",
+        default="lxc",
+        help="Type of update to perform: 'lxc' (default container update command) or 'apt' (apt-get update && upgrade)."
+    )
+    parser.add_argument(
         "--host", "-H",
         default="root@pve.home.local",
         help="Proxmox host to SSH into (default: root@pve.home.local). Pass 'local' to run locally on the PVE host."
     )
     parser.add_argument(
         "--cmd", "-C",
-        default="update",
-        help="Command to run inside each container (default: 'update')."
+        default=None,
+        help="Command to run inside each container (defaults to 'update' for 'lxc' and 'apt-get update && apt-get upgrade -y' for 'apt')."
     )
     parser.add_argument(
         "--containers", "-c",
@@ -138,6 +145,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if args.cmd is None:
+        args.cmd = "apt-get update && apt-get upgrade -y" if args.action == "apt" else "update"
 
     ssh_host = args.host
     if args.local or ssh_host.lower() == "local":
